@@ -14,7 +14,7 @@ If you believe another owner's file is wrong, report it; do not edit it.
 | A: tiling & splits | `src/crater/tiling.py`, `src/crater/splits.py`, `tests/test_tiling.py`, `tests/test_splits.py` |
 | B: boxes & dedup | `src/crater/boxes.py`, `src/crater/dedup.py`, `tests/test_boxes.py`, `tests/test_dedup.py` |
 | C: area & size-frequency | `src/crater/area.py`, `src/crater/sfd.py`, `tests/test_area.py`, `tests/test_sfd.py` |
-| D: acquisition & stages | `src/crater/download.py`, `src/crater/manifest.py`, `src/crater/stages.py`, `tests/test_download.py`, `tests/test_stages.py` |
+| D: acquisition & stages | `src/crater/download.py`, `src/crater/manifest.py`, `src/crater/stages.py`, `tests/test_download.py`, `tests/test_manifest.py`, `tests/test_stages.py` |
 
 ## Frozen API of `crater.geometry` (verified, 61 tests passing)
 All functions accept scalars or numpy arrays and return the same shape.
@@ -55,3 +55,16 @@ DIAMETER_DISTANCE_KIND = "planimetric_great_circle"
 8. Python 3.11, numpy 2.4, pandas 3.0, pyproj 3.7, rasterio 1.4, pytest.
    `tests/conftest.py` already puts `src/` on `sys.path`; import as
    `from crater import geometry as g`.
+
+## Integration notes added by the lead after the first agent round
+9. **The edge rule binds both numerator and denominator.** If `area.usable_area_*_by_diameter`
+   shrinks `A_i` by D/2, the crater counts fed to `sfd.size_frequency_table` MUST be filtered
+   with `area.crater_passes_edge_rule`. Using the full-area count with a shrunken `A_i`
+   biases R high (order 10% for 1 km craters in a 20 km survey).
+10. **Multiscale splits must be assigned in ONE call.** Pass every pyramid level through a
+   single `splits.assign_tiles_to_splits` with the same regions, or the same ground at two
+   scales can land in different splits and the audit will not see it.
+11. **`splits.usable_*_area_m2` is a sizing diagnostic, not survey area** — it sums overlapping
+   tile footprints. The authoritative, distortion-weighted survey area is `crater.area`.
+12. `boxes.UNMEASURED` is a falsy singleton, deliberately not `None`/`0.0`/`NaN`. Any stage
+   consuming diameters must test for it explicitly rather than relying on truthiness alone.

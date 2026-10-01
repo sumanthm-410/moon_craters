@@ -69,3 +69,46 @@ Option 2, clearly labelled non-metric.
 All lunar products use the Moon 2000 sphere, R = 1737400 m. Any south-polar
 work uses a lunar south polar stereographic CRS defined on that sphere.
 No EPSG Earth code will be assigned at any stage.
+
+
+## D-007 — Tile scale and pyramid design — **OPEN, blocking S5**
+Measured 2026-10-01 with `crater.tiling.recommend_tile_size` at 1 m/px,
+85.9 S, for the approved 20-1000 m range:
+- a 1000 m crater spans 1001.3 px (k inflates it), so with 25% context the
+  tile must be 2504 px; 4096 px recommended;
+- a 1024 px tile covers the full range only from pyramid level 2 (4 m/px),
+  where a 20 m crater is 5.0 px, below the project's 8 px floor.
+One tile size at one scale therefore cannot serve the approved range.
+Options: (a) two-scale pyramid, fine level 1 m/px for small craters and a
+coarse level for large ones; (b) single scale at 1 m/px with 2560-4096 px
+tiles; (c) single scale at 2 m/px with 1024 px tiles, accepting 20 m = 10 px.
+Note for (b): a detector resizes tiles to its `imgsz`, so a 4096 px tile fed
+at imgsz 1024 is effectively 4 m/px and gains nothing for small craters.
+
+## D-008 — Split buffer and achievable ratio — **OPEN, blocking S5**
+A defensible inter-split buffer is of order one crater diameter, since the
+continuous ejecta blanket extends roughly that far; for this diameter range
+that is **1000 m**. Measured consequence (1024 px tiles, 1 m/px, axis y):
+| ROI side | train/val/test tiles | discarded | achieved area ratio |
+|---|---|---|---|
+| 20 km | 459 / 0 / 54 | 31.0% | 0.888 / 0.000 / 0.112  (val EMPTY) |
+| 30 km | 1040 / 80 / 160 | 20.6% | 0.806 / 0.065 / 0.130 |
+| 35 km | 1426 / 138 / 230 | 15.4% | 0.792 / 0.078 / 0.130 |
+| 40 km | 1908 / 159 / 318 | 15.4% | 0.795 / 0.068 / 0.137 |
+70/15/15 is not achievable at any tested extent with a 1 km buffer and
+single-axis bands. The planner reports this and does not resize regions.
+Its own output passes `check_leakage` clean at every extent.
+
+## D-009 — Georeferencing is taken from the raster, not the PDS4 label — **DECIDED 2026-10-01**
+The PDS4 label of NAC_POLE_P860S0337 gives `upperleft_corner_x = -40627.5 m`;
+the delivered GeoTIFF geotransform and the project's independent analytic
+projection both give +40627.5 m (y agrees to 0.4 m). The label sign is wrong.
+All georeferencing is therefore read from the delivered raster. Trusting the
+label would have mirrored the entire survey about the x axis.
+
+## D-010 — Branch A source product — **DECIDED 2026-10-01 (pending calibration checks)**
+LROC RDR BDRNPL "NAC Polar" south mosaics at 1 m/pixel, polar stereographic
+on the Moon 2000 sphere, ASU-produced. Chosen because branch B is impossible
+here (no container runtime, D-004). Projection VERIFIED. Calibration state
+and terrain-correction status are NOT yet verified and must be before any
+measurement is published.
