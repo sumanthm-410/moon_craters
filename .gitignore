@@ -28,3 +28,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .ipynb_checkpoints/
+
+# External datasets and generated YOLO datasets (tracked via PROVENANCE.json)
+data/external/
+data/yolo/
+data/yolo_external/
+artifacts/runs/
