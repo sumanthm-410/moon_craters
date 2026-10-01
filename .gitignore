@@ -1,0 +1,30 @@
+# Credentials - never commit
+kaggle.json
+.kaggle/
+*access_token*
+*.pem
+*.key
+.env
+
+# Bulk data, intermediates and weights are tracked via manifests, not git
+data/raw/
+data/interim/
+data/processed/
+data/tiles/
+artifacts/
+*.IMG
+*.cub
+*.tif
+*.tiff
+*.jp2
+*.pt
+*.onnx
+
+# Keep small evidence figures and manifests
+!reports/evidence/*.png
+!data/manifests/*.csv
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
