@@ -41,8 +41,15 @@ A 12th module (`catalogue`) is in flight with its owning agent.
 |---|---|
 | Annotation campaign | **human labelling time** — the catalogue cannot substitute |
 | Kaggle dataset + GPU training | `KAGGLE_API_TOKEN` absent in this container (D-018) |
-| Inference, dedup, rim measurement | needs a trained model |
+| Inference, dedup, rim measurement | needs a Malapert-validated model |
 | Detector R-plot | needs the above |
+
+## Detector TRAINED (external domain)
+YOLO11n trained on the CraterDANet LRO-NAC dataset (real human labels,
+GPL-3.0). Observation-disjoint test split: **P 0.647, R 0.608, mAP50 0.578,
+mAP50-95 0.194**. These are Chang'E-4-region metrics at 0.5 m/px and are NOT
+Malapert performance; Malapert remains UNVALIDATED.
+See reports/training_evaluation.md.
 
 `crater.dedup`, `crater.boxes`, `crater.sfd` and `crater.area` are
 IMPLEMENTED and TESTED but have only ever run on synthetic fixtures with
