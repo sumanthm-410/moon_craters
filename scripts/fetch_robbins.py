@@ -167,6 +167,81 @@ def extract_members(path: Path, out_dir: Path, names: list[str]) -> list[Path]:
     return written
 
 
+#: Delivered CSV, once the bundle has been extracted.
+DEFAULT_CSV = (
+    DEFAULT_EXTRACT_DIR
+    / "lunar_crater_database_robbins_2018_bundle"
+    / "data"
+    / "lunar_crater_database_robbins_2018.csv"
+)
+
+#: Audit output.  Tracked in git (``.gitignore`` keeps ``data/manifests/*.csv``).
+DEFAULT_MANIFEST = _HERE.parent / "data" / "manifests" / "robbins_roi.csv"
+
+
+def audit_roi(
+    csv_path: Path,
+    *,
+    x_min: float,
+    x_max: float,
+    y_min: float,
+    y_max: float,
+    out_csv: Path,
+    logger=print,
+) -> dict:
+    """Select the catalogue craters inside a projected box and write the manifest.
+
+    The box is a parameter.  Nothing about the ROI is hard-coded here
+    (INTERFACES.md rule 5); the caller passes the controlled-mosaic grid bounds.
+    """
+    import numpy as np
+    from crater import catalogue as cat
+
+    df = cat.load_robbins_csv(csv_path, expect_records=cat.DECLARED_RECORD_COUNT)
+    logger(f"loaded {len(df):,} records; header and record count match the PDS4 label")
+    norm = cat.normalise_catalogue(df)
+    box = cat.ProjectedBox(x_min, x_max, y_min, y_max)
+    roi = cat.select_in_projected_box(norm, box).sort_values("diameter_m")
+    logger(f"ROI craters (projected box selection): {len(roi)}")
+
+    annotations = cat.catalogue_rim_annotations(roi)
+    table = cat.rim_annotation_frame(annotations)
+    table.insert(1, "x_m", roi["x_m"].to_numpy())
+    table.insert(2, "y_m", roi["y_m"].to_numpy())
+    table["arc_fraction_source_column"] = "ARC_IMG"
+    table["rim_vertices_traced"] = roi["PTS_RIM_IMG"].to_numpy()
+    table["ellipse_major_m"] = roi["DIAM_ELLI_MAJOR_IMG"].to_numpy() * cat.KM_TO_M
+    table["ellipse_minor_m"] = roi["DIAM_ELLI_MINOR_IMG"].to_numpy() * cat.KM_TO_M
+    table["equivalent_ellipse_diameter_m"] = cat.equivalent_ellipse_diameter_m(roi)
+    table["catalogue"] = "robbins_2018"
+    table["source_url"] = PACKAGE_URL
+    table["access_date_utc"] = utc_now_iso()
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    table.to_csv(out_csv, index=False)
+    logger(f"manifest written: {out_csv} ({len(table)} rows)")
+
+    d = roi["diameter_m"].to_numpy(dtype=float)
+    lo, hi = cat.APPROVED_DIAMETER_RANGE_M
+    c_lo, c_hi = cat.COMPLETENESS_LIMIT_M
+    summary = {
+        "roi_box_m": [x_min, x_max, y_min, y_max],
+        "count": int(len(roi)),
+        "diameter_m_min": float(np.min(d)) if len(d) else None,
+        "diameter_m_max": float(np.max(d)) if len(d) else None,
+        "diameter_m_median": float(np.median(d)) if len(d) else None,
+        "in_approved_range": int(np.sum((d >= lo) & (d <= hi))),
+        "below_approved_range": int(np.sum(d < lo)),
+        "above_approved_range": int(np.sum(d > hi)),
+        "above_optimistic_completeness_1km": int(np.sum(d >= c_lo)),
+        "below_optimistic_completeness_1km": int(np.sum(d < c_lo)),
+        "above_conservative_completeness_2km": int(np.sum(d >= c_hi)),
+        "between_1_and_2km": int(np.sum((d >= c_lo) & (d < c_hi))),
+    }
+    for k, v in summary.items():
+        logger(f"  {k}: {v}")
+    return summary
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dest", type=Path, default=DEFAULT_DEST)
@@ -179,7 +254,28 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="archive member to extract (repeatable); default: every .csv and .txt/.xml/.pdf doc",
     )
+    ap.add_argument(
+        "--audit",
+        nargs=4,
+        type=float,
+        metavar=("X_MIN", "X_MAX", "Y_MIN", "Y_MAX"),
+        default=None,
+        help="after fetching, select catalogue craters in this projected box "
+             "(metres, south polar stereographic) and write the ROI manifest",
+    )
+    ap.add_argument("--audit-only", action="store_true",
+                    help="skip the download and audit the already-extracted CSV")
+    ap.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    ap.add_argument("--csv", type=Path, default=DEFAULT_CSV)
     args = ap.parse_args(argv)
+
+    if args.audit_only:
+        if args.audit is None:
+            print("--audit-only requires --audit X_MIN X_MAX Y_MIN Y_MAX", file=sys.stderr)
+            return 2
+        audit_roi(args.csv, x_min=args.audit[0], x_max=args.audit[1],
+                  y_min=args.audit[2], y_max=args.audit[3], out_csv=args.manifest)
+        return 0
 
     accessed = utc_now_iso()
     print(f"landing page : {LANDING_PAGE}")
@@ -255,6 +351,11 @@ def main(argv: list[str] | None = None) -> int:
     prov_path = outcome.path.parent / PROVENANCE_NAME
     prov_path.write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
     print(f"provenance   : {prov_path}")
+
+    if args.audit is not None:
+        print("--- ROI audit ---")
+        audit_roi(args.csv, x_min=args.audit[0], x_max=args.audit[1],
+                  y_min=args.audit[2], y_max=args.audit[3], out_csv=args.manifest)
     return 0
 
 
