@@ -193,3 +193,30 @@ Permitted: detection and geometric measurement. Not permitted: any
 photometric, albedo or reflectance claim. These are not raw EDR pixels, so
 the project's rule against training on uncalibrated raw EDR is satisfied.
 Terrain correction remains UNVERIFIED (see scientific_limitations.md L-13).
+
+## D-017 — Survey area and counting areas — **MEASURED 2026-10-01**
+From `scripts/build_survey.py`, full resolution, block-wise:
+- true surface area, any variant: **439.918 km^2** (naive projected 441.000,
+  i.e. naive is +0.2459% high — matching the predicted +0.244% at 86 S);
+- >= 2 variants: 318.903 km^2;  all three: 170.831 km^2.
+
+Counting area A_i under the edge rule (crater centre at least D/2 of ground
+distance inside the survey boundary), computed on a 5x decimated mask:
+| D (m) | A_i (km^2) | % of survey |
+|---|---|---|
+| 20 | 439.081 | 99.8% |
+| 50 | 437.826 | 99.5% |
+| 100 | 435.739 | 99.0% |
+| 250 | 429.506 | 97.6% |
+| 500 | 419.219 | 95.3% |
+| 1000 | 399.019 | 90.7% |
+A_i must be used with counts filtered by `area.crater_passes_edge_rule`, or R
+is biased high (INTERFACES.md note 9).
+
+## D-018 — Kaggle authentication is NOT configured in this container — **BLOCKED**
+A credential was added at the platform/egress layer for *.kaggle.com, but the
+Kaggle CLI reads `KAGGLE_API_TOKEN` from the environment or
+`~/.kaggle/kaggle.json`. Neither is present in this container and
+`kaggle datasets list --mine` still returns "Authentication required".
+No training or upload has been attempted. A token pasted into chat on
+2026-10-01 was NOT used and must be treated as compromised and rotated.

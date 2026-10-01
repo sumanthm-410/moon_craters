@@ -40,7 +40,30 @@ inflate the survey area. **Valid data is DN > 1**, and the `.MASK.TIF`
 sidecar must be used as the authoritative valid-data layer.
 This is recorded as a standing rule in DECISIONS.md D-011.
 
-## Per-variant coverage (measured on the 20 m/px products)
+## CORRECTION (2026-10-01, after downloading the 1 m/px products)
+The per-variant percentages in the table below were measured on the 20 m/px
+browse products, whose frame is **padded** to 24.96 x 21.56 km. They are
+fractions of that padded frame, NOT of the 21 x 21 km ROI. Dividing by 0.819
+converts them. Measured directly on the 1 m/px `.IMG` inside the true ROI:
+
+| Variant | valid (DN>0) in ROI | area |
+|---|---|---|
+| LO1 | **100.0%** | 441.0 km^2 projected |
+| LOA | 51.5% | 226.9 km^2 |
+| LOH | 59.9% | 264.1 km^2 |
+
+Stacked over the three approved variants, inside the ROI:
+| at least N | fraction | true surface area |
+|---|---|---|
+| >= 1 | 100.0% | **439.918 km^2** |
+| >= 2 | 72.4% | 318.903 km^2 |
+| >= 3 | 38.8% | 170.831 km^2 |
+
+So **LO1 alone covers the entire ROI**, 318.9 km^2 carries two independent
+illuminations and 170.8 km^2 carries all three. The naive projected area is
++0.2459% high, matching the predicted 0.244% at this latitude.
+
+## Per-variant coverage (measured on the 20 m/px products — see correction above)
 | Variant | valid (DN>1) | mean DN of valid | note |
 |---|---|---|---|
 | LO1 | 81.7% | 118.9 | best single coverage |
