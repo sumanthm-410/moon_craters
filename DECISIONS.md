@@ -12,7 +12,15 @@ The environment denies every LROC, PDS, ODE, USGS, NAIF and Kaggle host
 (VERIFIED, reports/environment_audit.md). Nothing in sections 4-11 can run
 until this changes. Options presented to user; awaiting choice.
 
-## D-002 — ROI centre and extent — **DEFERRED by user 2026-10-01**
+## D-002 — ROI centre — **DECIDED by user 2026-10-01: 2.9 E, 85.9 S**
+Chosen on imagery evidence after both candidates were extracted at 1 m/px.
+Candidate A (2.9 E) is well exposed (p1-p99 = 34-199, no saturation) with
+abundant crisp small craters; candidate B (356.4 E) is near saturation
+(129-255) with a strong illumination gradient and few crisp small craters.
+The selected controlled Malapert mosaic is centred at 86.0 S, 0.3 E and
+contains this point.
+
+### superseded deferral
 User chose to resolve the centre authoritatively rather than guess between the
 two candidates. Action once egress opens: resolve against the IAU gazetteer
 and LROC footprint metadata, then set roi.centre in config/project.yaml.
@@ -112,3 +120,37 @@ on the Moon 2000 sphere, ASU-produced. Chosen because branch B is impossible
 here (no container runtime, D-004). Projection VERIFIED. Calibration state
 and terrain-correction status are NOT yet verified and must be before any
 measurement is published.
+
+
+## D-011 — Fill value is DN = 1, undeclared — **DECIDED 2026-10-01 (standing rule)**
+The Malapert controlled mosaics report `nodata = None` but fill unimaged
+ground with **DN = 1** (0.0% of pixels are 0). Valid data is **DN > 1**, and
+the `.MASK.TIF` sidecar is the authoritative valid-data layer.
+Every stage that reads these rasters must apply this. Treating DN=1 as valid
+would train on blank fill and inflate the surveyed area.
+
+## D-012 — ROI extent must drop from 35 km to 21 km — **OPEN, needs user**
+The user approved a 35 km (1225 km^2) extent before the source was known.
+The controlled Malapert mosaic covers **21 x 21 km = 441 km^2** and the
+generic NAC_POLE row cannot extend it northwards (that row is the
+northernmost of the set). Options are in the user-facing summary; this is a
+material reduction and is not being absorbed silently.
+Measured split feasibility on the real 21 km grid, 1000 m ground buffer,
+single-axis bands:
+| tile px | tiles | train/val/test | discarded | ratio |
+|---|---|---|---|---|
+| 1024 | 784 | 504 / 0 / 56 | 29.3% | 0.896/0.000/0.104 (val EMPTY) |
+| 640 | 1936 | 1232 / 44 / 176 | 25.2% | 0.847/0.031/0.123 |
+| 512 | 3025 | 1925 / 110 / 275 | 23.8% | 0.831/0.048/0.120 |
+| 384 | 5329 | 3431 / 219 / 511 | 22.0% | 0.824/0.053/0.123 |
+Single-axis bands waste a lot of a small ROI to buffers. A 2-D block layout
+(validation and test as buffered corner blocks rather than full-width bands)
+should recover a larger validation fraction; not yet implemented.
+
+## D-013 — Illumination variants are a resource, and a leakage risk — **NOTED**
+Nine variants image the same ground. ~434.6 km^2 has >= 3 independent
+illuminations. This supports measuring recall vs illumination, but every
+variant of a given ground block MUST go to the same split, or the same
+terrain appears in train and test under different lighting. This is exactly
+`splits.check_leakage`'s `alternate_acquisition_of_same_area` finding, and
+all variants must be passed through one `assign_tiles_to_splits` call.
