@@ -1,0 +1,18 @@
+# Pinned Python environment, verified working 2026-10-01 (Python 3.11.15).
+# Geospatial stack ships GDAL 3.10.3 / PROJ 9.5.1 inside the rasterio/pyproj wheels,
+# so no separate system GDAL is required for the current stages.
+# ISIS, if branch B is approved, needs a SEPARATE conda/container environment
+# (see DECISIONS.md D-004) and is deliberately not listed here.
+PyYAML==6.0.1
+affine==3.0.1
+kaggle==2.2.4
+matplotlib==3.11.2
+numpy==2.4.6
+pandas==3.0.6
+pillow==12.3.0
+pyproj==3.7.2
+pytest==9.1.1
+rasterio==1.4.4
+requests==2.34.2
+scipy==1.17.1
+shapely==2.1.2
