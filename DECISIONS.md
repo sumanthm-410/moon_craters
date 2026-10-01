@@ -129,7 +129,14 @@ the `.MASK.TIF` sidecar is the authoritative valid-data layer.
 Every stage that reads these rasters must apply this. Treating DN=1 as valid
 would train on blank fill and inflate the surveyed area.
 
-## D-012 — ROI extent must drop from 35 km to 21 km — **OPEN, needs user**
+## D-012 — ROI extent 21 km / 441 km^2 — **DECIDED by user 2026-10-01**
+User accepted the controlled product's own extent rather than mixing in the
+generic NAC_POLE tiles. Survey is confined to the controlled Malapert mosaic:
+provenance stays uniform, no inter-product registration problem. Accepted
+consequence: the >1 km diameter bins will hold only tens of craters and must
+be reported as underpowered.
+
+### original finding
 The user approved a 35 km (1225 km^2) extent before the source was known.
 The controlled Malapert mosaic covers **21 x 21 km = 441 km^2** and the
 generic NAC_POLE row cannot extend it northwards (that row is the
@@ -154,3 +161,35 @@ variant of a given ground block MUST go to the same split, or the same
 terrain appears in train and test under different lighting. This is exactly
 `splits.check_leakage`'s `alternate_acquisition_of_same_area` finding, and
 all variants must be passed through one `assign_tiles_to_splits` call.
+
+
+## D-013b — Illumination variants to use — **DECIDED by user 2026-10-01**
+Train on **LO1 + LOA + LOH**; evaluate recall per variant.
+These are the three with real coverage and genuinely distinct shadow geometry
+(81.7%, 41.2%, 48.7% valid; 434.6 km^2 of the ROI has >= 3 variants).
+Excluded: LOB/LOC/LOD/LOE/LOG (mostly blank fill at this ROI) and LOF
+(dark, with a visible vertical striping artifact likely to generate false
+positives). All variants of a given ground block go to the SAME split.
+
+## D-014 — Read the .IMG, not the browse .TIF — **DECIDED 2026-10-01**
+The browse TIFs are a linear 8-bit rescale of the uint16 product
+(TIF = 0.0053481*IMG + 0.3696, r = 0.9999, rho = 0.99995) but collapse ~7900
+levels to 254 and clip the bright tail above IMG ~47700.
+Measurement and training use the `.IMG`; browse TIFs are for display,
+coverage audits and quick-look only. See reports/georeferencing_and_calibration.md.
+
+## D-015 — Never use GDAL's PDS4 geotransform for this product — **DECIDED 2026-10-01**
+Opening the `.xml` with GDAL yields a geotransform in deg/pixel
+(3.2977886e-05) carrying the label's wrong x sign; a projected-metre window
+against it reads off-target (verified all-zero). Pixel data is read from the
+`.IMG` by array index and the geotransform is taken from the GeoTIFF.
+`scale_factor_at_projection_origin = 1.0` is now VERIFIED from the label,
+confirming k0 = 1 (previously an assumption).
+
+## D-016 — Calibration state stated precisely — **DECIDED 2026-10-01**
+`processing_level = "Derived"`; no scaling_factor or value_offset in the
+label. Values are DN of a controlled mosaic, NOT calibrated I/F.
+Permitted: detection and geometric measurement. Not permitted: any
+photometric, albedo or reflectance claim. These are not raw EDR pixels, so
+the project's rule against training on uncalibrated raw EDR is satisfied.
+Terrain correction remains UNVERIFIED (see scientific_limitations.md L-13).
