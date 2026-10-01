@@ -79,6 +79,23 @@ and no completeness correction is invented.
 model/measurement systematic uncertainty are propagated and reported
 separately, never summed into one opaque error bar.
 
+**L-13. Terrain correction of the source mosaic is unverified.** The label
+says "controlled mosaic ... in PolarStereographic projection" and cites
+[HENRIKSENETAL2023], but does not state whether it is orthorectified against
+a DEM. Map projection is not terrain correction; on steep massif flanks an
+uncorrected projection displaces features by about h*tan(emission). Until
+resolved, only planimetric diameters are reported and no terrain correction
+is claimed.
+
+**L-14. The source is DN, not calibrated reflectance.** processing_level is
+"Derived" with no radiometric scaling in the label. Detection and geometry
+are supported; no photometric or albedo quantity may be derived.
+
+**L-15. The survey is 441 km^2, so the large-diameter bins are thin.** At
+equilibrium density the >1 km bins hold only tens of craters. Those bins will
+carry wide Poisson intervals and must be reported as underpowered rather than
+interpreted.
+
 ## 3. [OPEN] — resolvable only by running the pipeline
 - Achievable recall and precision as a function of diameter.
 - The true minimum reliably *measurable* diameter, as opposed to the 20 m

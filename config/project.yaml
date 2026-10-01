@@ -6,14 +6,17 @@ project:
   state: awaiting_decisions
 
 roi:
-  status: DEFERRED             # user 2026-10-01, resolve authoritatively, D-002
+  status: CENTRE_APPROVED      # D-002 decided; extent OPEN, see D-012
   candidate_a:                 # as given in the brief (unverified)
     centre_lon_deg: 2.9
     centre_lat_deg: -85.9
   candidate_b:                 # from literature search (unverified)
     centre_lon_deg: -3.6
     centre_lat_deg: -85.8
-  half_extent_km: OPEN
+  approved_centre_lon_deg: 2.9
+  approved_centre_lat_deg: -85.9
+  half_extent_km: OPEN         # user approved 35 km before the source was known;
+                               # the controlled product offers 21 km. See D-012.
   note: >
     Candidates differ by ~6.5 deg longitude, ~14 km on the ground at 86 S.
     Neither is confirmed against an authoritative gazetteer (host denied).
@@ -31,7 +34,7 @@ target_crs:
   # Lunar south polar stereographic on the Moon 2000 sphere.
   # Deliberately NOT an EPSG Earth code.
   proj4: "+proj=stere +lat_0=-90 +lat_ts=-90 +lon_0=0 +k=1 +x_0=0 +y_0=0 +a=1737400 +b=1737400 +units=m +no_defs"
-  pixel_scale_m: OPEN          # follows from the chosen imagery
+  pixel_scale_m: 1.0           # LROC NAC controlled mosaic, verified on the raster
 
 diameters:
   status: APPROVED             # user 2026-10-01, DECISIONS.md D-003
@@ -67,3 +70,33 @@ compute:
 
 seeds:
   global: 20261001
+
+selected_source:
+  product_family: bdr.nac_roi.malapert**.nac_roi_malapert**_p860s0003
+  product_type: BDRROI
+  dataset_id: lro-l-lroc-5-rdr
+  producer: Arizona State University
+  version: "2.0"
+  created: 2024-01-30
+  description: Malapert Massif Low Sun controlled mosaic, PolarStereographic, 86.0S 0.3E
+  control_reference: HENRIKSENETAL2023   # cited in the PDS4 label; not yet retrieved
+  resolution_m_per_px: 1.0
+  grid_px: [21000, 21000]
+  upper_left_xy_m: [-11000.0, 132000.0]
+  extent_projected_km2: 441.0
+  variants: [LO1, LOA, LOB, LOC, LOD, LOE, LOF, LOG, LOH]
+  fill_value_dn: 1             # UNDECLARED in the GeoTIFF. Valid data is DN > 1. D-011
+  mask_sidecar: .MASK.TIF
+  host: https://pds.mcp.nasa.gov/data/store/img/lunar_reconnaissance_orbiter/pds4/lroc/lro-l-lroc-5-rdr/LROLRC_2001
+  accept_ranges: true          # windowed reads verified; no bulk download required
+
+tiling:
+  design: two_scale_pyramid    # D-007 approved by user
+  fine:   {pixel_scale_m: 1.0, tile_px: null, serves_diameter_m: [20, 250]}
+  coarse: {pixel_scale_m: 4.0, tile_px: 1024, serves_diameter_m: [250, 1000]}
+  note: fine tile_px depends on the D-012 extent decision (1024 leaves val empty at 21 km)
+
+splits:
+  buffer_m: 1000               # one crater diameter; ejecta-range argument, D-008
+  target_ratio: [0.70, 0.15, 0.15]
+  achievable: false            # at 21 km with 1 km buffers; see D-012 table
